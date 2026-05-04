@@ -56,7 +56,12 @@ body.light{--bg:#f8fafc;--card:rgba(255,255,255,.97);--border:rgba(59,130,246,.1
 .rph{padding:10px 12px 8px;font-size:12px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .rph .rx{cursor:pointer;font-size:16px;color:var(--text3);transition:color .2s}
 .rph .rx:hover{color:var(--accent)}
-.rsel{margin:8px 10px;padding:8px 10px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;cursor:pointer;width:calc(100% - 20px)}
+.rsel{margin:8px 10px;padding:9px 32px 9px 12px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;cursor:pointer;width:calc(100% - 20px);-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border-color .2s}
+.rsel:focus{border-color:var(--accent)}
+body.dark .rsel{background:rgba(30,41,59,.9)}
+body.dark .rsel option{background:#1e293b;color:#e2e8f0}
+body.light .rsel{background:rgba(241,245,249,.9)}
+body.light .rsel option{background:#fff;color:#1e293b}
 .rsrch{margin:0 10px 6px;padding:7px 10px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;width:calc(100% - 20px)}
 .rsrch::placeholder{color:var(--text3)}
 .rsrch:focus{border-color:var(--accent)}
@@ -128,7 +133,7 @@ body.light .leaflet-popup-tip{background:#fff!important}
 <div id="map"></div>
 <script>
 (function(){
-const C={'Komersial':{color:'#f97316',icon:'🏪',subs:{'Restoran':{c:'#fb923c',i:'🍽️',m:f=>['restaurant','cafe','fast_food','food_court'].includes(f.properties.amenity)},'Toko':{c:'#f59e0b',i:'🛒',m:f=>f.properties.shop&&f.properties.shop!=='supermarket'},'Supermarket':{c:'#ea580c',i:'🏬',m:f=>f.properties.shop==='supermarket'||f.properties.amenity==='supermarket'}}},'Pendidikan':{color:'#3b82f6',icon:'🎓',subs:{'Sekolah':{c:'#60a5fa',i:'🏫',m:f=>f.properties.amenity==='school'},'Universitas':{c:'#2563eb',i:'🎓',m:f=>f.properties.amenity==='university'},'Perguruan Tinggi':{c:'#818cf8',i:'📚',m:f=>f.properties.amenity==='college'}}},'Keuangan':{color:'#10b981',icon:'🏦',subs:{'Bank':{c:'#34d399',i:'🏦',m:f=>f.properties.amenity==='bank'},'ATM':{c:'#059669',i:'💳',m:f=>f.properties.amenity==='atm'}}}};
+const C={'Komersial':{color:'#f97316',icon:'🏪',subs:{'Restoran':{c:'#fb923c',i:'🍽️',m:f=>['restaurant','cafe','fast_food','food_court'].includes(f.properties.amenity)},'Toko':{c:'#f59e0b',i:'🛒',m:f=>f.properties.shop&&f.properties.shop!=='supermarket'},'Supermarket':{c:'#ea580c',i:'🏬',m:f=>f.properties.shop==='supermarket'||f.properties.amenity==='supermarket'}}},'Pendidikan':{color:'#3b82f6',icon:'🎓',subs:{'Sekolah':{c:'#60a5fa',i:'🏫',m:f=>f.properties.amenity==='school'},'Universitas':{c:'#2563eb',i:'🎓',m:f=>f.properties.amenity==='university'||f.properties.amenity==='college'}}},'Keuangan':{color:'#10b981',icon:'🏦',subs:{'Bank':{c:'#34d399',i:'🏦',m:f=>f.properties.amenity==='bank'},'ATM':{c:'#059669',i:'💳',m:f=>f.properties.amenity==='atm'}}}};
 const P=Object.keys(C);
 function cat(f){for(const p of P)for(const s of Object.keys(C[p].subs))if(C[p].subs[s].m(f))return{p,s};return null}
 
@@ -160,9 +165,11 @@ fetch('./data/hallein.geojson').then(r=>{if(!r.ok)throw 0;return r.json()}).then
     const cn={};P.forEach(p=>{cn[p]={};Object.keys(C[p].subs).forEach(s=>cn[p][s]=0)});let tot=0;
     (data.features||[]).forEach(f=>{const c=cat(f);if(!c)return;cn[c.p][c.s]++;tot++;const col=C[c.p].subs[c.s].c,gt=f.geometry.type;
     if(gt==='Point'){const co=f.geometry.coordinates,m=L.marker([co[1],co[0]],{icon:mk(col)});m.bindPopup(pp(f.properties,c.p,c.s),{maxWidth:230});if(f.properties.name)m.bindTooltip(f.properties.name,{className:'custom-tooltip',direction:'top',offset:[0,-8]});m.feature=f;m._cat=c;cG[c.p][c.s].addLayer(m);
-    poiList.push({name:f.properties.name||'Tanpa Nama',p:c.p,s:c.s,lat:co[1],lng:co[0],marker:m,props:f.properties})}
+    const pname=f.properties.name||(f.properties.operator?c.s+' - '+f.properties.operator:c.s+' #'+cn[c.p][c.s]);
+    poiList.push({name:pname,p:c.p,s:c.s,lat:co[1],lng:co[0],marker:m,props:f.properties,hasInfo:true})}
     else if(gt==='Polygon'||gt==='MultiPolygon'){const ly=L.geoJSON(f,{style:{fillColor:col,fillOpacity:.2,color:col,weight:2,opacity:.7},onEachFeature:(fe,l)=>{l.bindPopup(pp(fe.properties,c.p,c.s),{maxWidth:230});if(fe.properties.name)l.bindTooltip(fe.properties.name,{className:'custom-tooltip',direction:'top'})}});ly.feature=f;cG[c.p][c.s].addLayer(ly);
-    if(f.properties.name){const bounds=ly.getBounds();const center=bounds.getCenter();poiList.push({name:f.properties.name,p:c.p,s:c.s,lat:center.lat,lng:center.lng,layer:ly,props:f.properties})}}});
+    const pname2=f.properties.name||(f.properties.operator?c.s+' - '+f.properties.operator:c.s+' #'+cn[c.p][c.s]);
+    const bounds=ly.getBounds();const center=bounds.getCenter();poiList.push({name:pname2,p:c.p,s:c.s,lat:center.lat,lng:center.lng,layer:ly,props:f.properties,hasInfo:true})}});
     const all=[];P.forEach(p=>Object.keys(C[p].subs).forEach(s=>all.push(...cG[p][s].getLayers())));
     if(all.length)map.fitBounds(L.featureGroup(all).getBounds().pad(0.05));
     mkLeg(cn);mkStats(cn,tot);buildPOI();
@@ -197,7 +204,7 @@ function renderPOI(){
     const cv=document.getElementById('rcat').value;
     const q=document.getElementById('rsrch').value.toLowerCase().trim();
     const list=document.getElementById('rlist');list.innerHTML='';
-    let filtered=poiList.filter(p=>p.name!=='Tanpa Nama');
+    let filtered=poiList.filter(p=>p.hasInfo);
     if(cv!=='all'){const[cp,cs]=cv.split('|');filtered=filtered.filter(p=>p.p===cp&&p.s===cs)}
     if(q)filtered=filtered.filter(p=>p.name.toLowerCase().includes(q));
     filtered.sort((a,b)=>a.name.localeCompare(b.name));
