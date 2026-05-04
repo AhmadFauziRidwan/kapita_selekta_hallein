@@ -5,278 +5,220 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WebGIS Hallein, Austria</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;overflow:hidden;height:100vh;transition:background .3s,color .3s}
-body.dark{--bg:rgba(15,23,42,.92);--bg2:rgba(30,41,59,.88);--border:rgba(99,102,241,.25);--accent:#6366f1;--accent2:#a5b4fc;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--surface:rgba(15,23,42,.93);--hover:rgba(255,255,255,.05);--badge-bg:rgba(99,102,241,.15);background:#0f172a;color:#e2e8f0}
-body.light{--bg:rgba(255,255,255,.92);--bg2:rgba(248,250,252,.88);--border:rgba(99,102,241,.2);--accent:#6366f1;--accent2:#4f46e5;--text:#1e293b;--text2:#475569;--text3:#94a3b8;--surface:rgba(255,255,255,.95);--hover:rgba(0,0,0,.04);--badge-bg:rgba(99,102,241,.1);background:#f1f5f9;color:#1e293b}
-#header{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,var(--bg),var(--bg2));backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;height:56px}
-.header-left{display:flex;align-items:center;gap:12px}
-.header-icon{width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 12px rgba(99,102,241,.35)}
-.header-title{font-size:16px;font-weight:700;color:var(--accent2)}
-.header-subtitle{font-size:11px;color:var(--text3)}
-.header-right{display:flex;align-items:center;gap:10px}
-.header-badge{background:var(--badge-bg);border:1px solid var(--border);color:var(--accent2);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500}
-.ctrl-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(10px);color:var(--accent2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
-.ctrl-btn:hover{background:rgba(99,102,241,.15)}
-#map{position:fixed;top:56px;left:0;right:0;bottom:32px;z-index:1}
-#sidebar{position:fixed;top:66px;right:14px;z-index:900;width:270px;max-height:calc(100vh - 110px);background:linear-gradient(160deg,var(--surface),var(--bg2));backdrop-filter:blur(14px);border-radius:14px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.25);overflow-y:auto;transition:transform .3s,opacity .3s}
-#sidebar.hidden{transform:translateX(300px);opacity:0;pointer-events:none}
-.sidebar-header{padding:14px 16px 10px;border-bottom:1px solid rgba(128,128,128,.1)}
-.sidebar-header h3{font-size:13px;font-weight:600;color:var(--accent2)}
-.sidebar-header p{font-size:10px;color:var(--text3)}
-.legend-list{padding:8px 12px 12px;display:flex;flex-direction:column;gap:2px}
-.legend-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .2s;user-select:none}
-.legend-item:hover{background:var(--hover)}
-.legend-item.disabled{opacity:.35}
-.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px rgba(0,0,0,.2)}
-.legend-label{font-size:12px;font-weight:500;color:var(--text);flex:1}
-.legend-count{font-size:10px;color:var(--text3);background:var(--hover);padding:2px 7px;border-radius:10px}
-.legend-sep{height:1px;background:rgba(128,128,128,.12);margin:4px 0}
-/* Sub-items */
-.legend-parent{position:relative}
-.legend-parent .legend-label{font-weight:600}
-.legend-arrow{font-size:10px;color:var(--text3);transition:transform .2s;margin-left:4px}
-.legend-arrow.open{transform:rotate(90deg)}
-.sub-list{padding-left:22px;display:flex;flex-direction:column;gap:1px;overflow:hidden;max-height:0;transition:max-height .3s ease}
-.sub-list.open{max-height:300px}
-.sub-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;transition:background .2s;user-select:none;font-size:11px;color:var(--text2)}
-.sub-item:hover{background:var(--hover)}
-.sub-item.disabled{opacity:.3}
-.sub-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.sub-count{font-size:9px;color:var(--text3);margin-left:auto;background:var(--hover);padding:1px 6px;border-radius:8px}
-/* Basemap */
-.basemap-section{padding:8px 12px;border-top:1px solid rgba(128,128,128,.1)}
-.basemap-section h4{font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-.basemap-list{display:flex;flex-direction:column;gap:3px}
-.basemap-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .2s;font-size:12px;color:var(--text)}
-.basemap-opt:hover{background:var(--hover)}
-.basemap-opt.active{background:rgba(99,102,241,.12);color:var(--accent2);font-weight:600}
-.basemap-radio{width:10px;height:10px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0}
-.basemap-opt.active .basemap-radio{background:var(--accent);border-color:var(--accent)}
-#sidebar-toggle{position:fixed;top:70px;right:14px;z-index:901;display:none}
-#sidebar-toggle.show{display:flex}
-#stats-bar{position:fixed;top:66px;left:14px;z-index:900;display:flex;gap:8px}
-.stat-card{background:linear-gradient(160deg,var(--surface),var(--bg2));backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:10px;padding:8px 14px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.15)}
-.stat-value{font-size:18px;font-weight:700;color:var(--accent2)}
-.stat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
-#footer{position:fixed;bottom:0;left:0;right:0;height:32px;z-index:1000;background:linear-gradient(135deg,var(--bg),var(--bg2));backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:10px;color:var(--text3)}
-#footer a{color:var(--accent);text-decoration:none}
-.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:0 8px 32px rgba(0,0,0,.35)!important}
-body.dark .leaflet-popup-content-wrapper{background:linear-gradient(160deg,#1e293b,#0f172a)!important;border:1px solid rgba(99,102,241,.25)!important;color:#e2e8f0!important}
-body.dark .leaflet-popup-tip{background:#1e293b!important}
-body.light .leaflet-popup-content-wrapper{background:#fff!important;border:1px solid rgba(99,102,241,.15)!important;color:#1e293b!important}
+body{font-family:'Plus Jakarta Sans',sans-serif;overflow:hidden;height:100vh}
+body.dark{--bg:#0c0f1a;--card:rgba(17,20,35,.96);--border:rgba(59,130,246,.12);--accent:#60a5fa;--accent2:#93c5fd;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--hover:rgba(255,255,255,.04);--glow:rgba(59,130,246,.12);color:#e2e8f0}
+body.light{--bg:#f8fafc;--card:rgba(255,255,255,.97);--border:rgba(59,130,246,.1);--accent:#2563eb;--accent2:#1d4ed8;--text:#1e293b;--text2:#475569;--text3:#94a3b8;--hover:rgba(0,0,0,.03);--glow:rgba(37,99,235,.08);color:#1e293b}
+
+#header{position:fixed;top:0;left:0;right:0;z-index:1000;height:50px;background:linear-gradient(135deg,#1e40af,#2563eb,#3b82f6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(37,99,235,.3)}
+.ht{font-size:15px;font-weight:800;color:#fff;letter-spacing:.2px}
+.hs{font-size:10px;color:rgba(255,255,255,.75)}
+.hl,.hr{position:absolute;display:flex;gap:6px}
+.hl{left:10px}.hr{right:10px}
+.hb{width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(6px)}
+.hb:hover{background:rgba(255,255,255,.25);transform:scale(1.08)}
+
+#map{position:fixed;top:50px;left:0;right:0;bottom:0;z-index:1}
+
+/* Left panel - Legend */
+#lpanel{position:fixed;top:60px;left:10px;z-index:900;width:220px;max-height:calc(100vh - 120px);background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px var(--glow);overflow-y:auto;transition:transform .3s,opacity .3s}
+#lpanel.hid{transform:translateX(-240px);opacity:0;pointer-events:none}
+.lph{padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:4px}
+.lps{padding:4px 8px}
+.sh{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:6px 4px 2px;display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none}
+.sh:hover{color:var(--accent)}
+.sa{font-size:7px;transition:transform .2s}.sa.o{transform:rotate(90deg)}
+.sb{overflow:hidden;max-height:0;transition:max-height .3s}.sb.o{max-height:300px}
+.li{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;transition:all .15s;user-select:none}
+.li:hover{background:var(--hover);transform:translateX(2px)}
+.li.off{opacity:.2}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lt{font-size:10px;font-weight:500;color:var(--text);flex:1}
+.ln{font-size:8px;color:var(--text3);background:var(--hover);padding:1px 4px;border-radius:5px}
+.lsep{height:1px;background:var(--border);margin:2px 6px}
+.bms{padding:4px 8px;border-top:1px solid var(--border)}
+.bmt{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:4px}
+.bo{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:10px;color:var(--text);transition:all .15s}
+.bo:hover{background:var(--hover)}
+.bo.a{background:rgba(139,92,246,.1);color:var(--accent);font-weight:600}
+.br{width:8px;height:8px;border-radius:50%;border:2px solid var(--text3);flex-shrink:0}
+.bo.a .br{background:var(--accent);border-color:var(--accent)}
+
+/* Right panel - POI Directory */
+#rpanel{position:fixed;top:60px;right:10px;z-index:900;width:260px;max-height:calc(100vh - 120px);background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px var(--glow);display:flex;flex-direction:column;transition:transform .3s,opacity .3s}
+#rpanel.hid{transform:translateX(280px);opacity:0;pointer-events:none}
+.rph{padding:10px 12px 8px;font-size:12px;font-weight:700;color:var(--accent);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.rph .rx{cursor:pointer;font-size:16px;color:var(--text3);transition:color .2s}
+.rph .rx:hover{color:var(--accent)}
+.rsel{margin:8px 10px;padding:8px 10px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;cursor:pointer;width:calc(100% - 20px)}
+.rsrch{margin:0 10px 6px;padding:7px 10px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:inherit;outline:none;width:calc(100% - 20px)}
+.rsrch::placeholder{color:var(--text3)}
+.rsrch:focus{border-color:var(--accent)}
+.rlist{flex:1;overflow-y:auto;padding:0 6px 8px}
+.ri{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:8px;cursor:pointer;transition:all .15s;border-bottom:1px solid rgba(128,128,128,.05)}
+.ri:hover{background:var(--hover);transform:translateX(2px)}
+.ri-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ri-info{flex:1;min-width:0}
+.ri-name{font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-cat{font-size:9px;color:var(--text3)}
+.rlist::-webkit-scrollbar{width:3px}
+.rlist::-webkit-scrollbar-thumb{background:rgba(59,130,246,.2);border-radius:3px}
+
+/* Zoom - bottom right to avoid overlap */
+.leaflet-top.leaflet-left{display:none!important}
+.leaflet-bottom.leaflet-right{bottom:40px!important}
+#zoom-custom{position:fixed;bottom:40px;left:14px;z-index:950;display:flex;flex-direction:column;gap:4px}
+#zoom-custom button{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--accent);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px var(--glow);transition:all .2s;font-weight:700}
+#zoom-custom button:hover{background:rgba(59,130,246,.12);transform:scale(1.08)}
+
+/* Bottom stats */
+#bbar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:900;display:flex;gap:3px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px 12px;box-shadow:0 6px 24px var(--glow)}
+.bs{display:flex;align-items:center;gap:3px;padding:0 7px;border-right:1px solid var(--border)}.bs:last-child{border:none}
+.bs-i{font-size:11px}.bs-n{font-size:12px;font-weight:800;color:var(--accent)}.bs-l{font-size:8px;color:var(--text3)}
+
+/* Cluster */
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(59,130,246,.2)!important}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:linear-gradient(135deg,#1e40af,#3b82f6)!important;color:#fff!important;font-family:inherit!important;font-weight:700!important;font-size:12px!important;box-shadow:0 3px 12px rgba(37,99,235,.4)!important}
+
+/* Popup */
+.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:0 8px 28px rgba(0,0,0,.25)!important}
+body.dark .leaflet-popup-content-wrapper{background:#111428!important;border:1px solid rgba(59,130,246,.15)!important;color:#e2e8f0!important}
+body.dark .leaflet-popup-tip{background:#111428!important}
+body.light .leaflet-popup-content-wrapper{background:#fff!important;color:#1e293b!important}
 body.light .leaflet-popup-tip{background:#fff!important}
-.leaflet-popup-close-button{color:var(--text2)!important;font-size:18px!important}
-.popup-title{font-size:14px;font-weight:700;color:var(--accent2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(128,128,128,.12)}
-.popup-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}
-.popup-key{color:var(--text2);font-weight:500}
-.popup-val{color:var(--text);font-weight:400;text-align:right;max-width:160px;word-break:break-word}
-.popup-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-top:6px}
-.leaflet-control-zoom a{background:var(--surface)!important;color:var(--accent2)!important;border:1px solid var(--border)!important}
-.leaflet-control-zoom a:hover{background:rgba(99,102,241,.2)!important}
-.custom-tooltip{background:var(--surface)!important;border:1px solid var(--border)!important;border-radius:8px!important;color:var(--text)!important;font-family:'Inter',sans-serif!important;font-size:11px!important;padding:4px 10px!important;box-shadow:0 4px 16px rgba(0,0,0,.25)!important}
-.leaflet-control-scale-line{background:var(--surface)!important;border-color:var(--border)!important;color:var(--text2)!important}
-#loader{position:fixed;inset:0;z-index:9999;background:#0f172a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
+.leaflet-popup-close-button{color:var(--text3)!important;font-size:18px!important}
+.pt{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.pr{display:flex;justify-content:space-between;padding:2px 0;font-size:10px}.pk{color:var(--text2)}.pv{color:var(--text);text-align:right;max-width:130px}
+.pb{display:inline-block;padding:2px 6px;border-radius:6px;font-size:9px;font-weight:600;margin-top:3px}
+.custom-tooltip{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:6px!important;color:var(--text)!important;font-family:inherit!important;font-size:10px!important;padding:3px 7px!important;box-shadow:0 3px 10px var(--glow)!important}
+.leaflet-control-scale-line{background:var(--card)!important;border-color:var(--border)!important;color:var(--text2)!important;font-size:9px!important}
+#loader{position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse,#1a1040,#0c0f1a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .5s}
 #loader.fade{opacity:0;pointer-events:none}
-.spinner{width:40px;height:40px;border:3px solid rgba(99,102,241,.2);border-top-color:#6366f1;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-#search-box{padding:6px 10px;margin:8px 12px;width:calc(100% - 24px);background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;font-family:'Inter',sans-serif;outline:none}
-#search-box::placeholder{color:var(--text3)}
-#search-box:focus{border-color:rgba(99,102,241,.5)}
-#sidebar::-webkit-scrollbar{width:4px}
-#sidebar::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:4px}
+.spin{width:40px;height:40px;border:3px solid rgba(59,130,246,.15);border-top-color:#60a5fa;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#lpanel::-webkit-scrollbar{width:3px}#lpanel::-webkit-scrollbar-thumb{background:rgba(59,130,246,.2);border-radius:3px}
 </style>
 </head>
 <body class="dark">
-<div id="loader"><div class="spinner"></div><span style="color:#94a3b8;font-size:13px">Memuat peta Hallein...</span></div>
+<div id="loader"><div class="spin"></div><span style="color:#93c5fd;font-size:11px">Memuat peta Hallein...</span></div>
 <header id="header">
-<div class="header-left"><div class="header-icon">🗺️</div><div><div class="header-title">WebGIS Hallein, Austria</div><div class="header-subtitle">Peta Fasilitas & Layanan — Data OpenStreetMap</div></div></div>
-<div class="header-right"><button class="ctrl-btn" id="theme-toggle" title="Toggle Dark/Light">🌙</button><div class="header-badge">📍 Distrik Hallein, Salzburg</div></div>
+<div class="hl"><div class="hb" id="thm">🌙</div><div class="hb" id="ltg">☰</div></div>
+<div style="text-align:center"><div class="ht">🗺️ WebGIS Hallein, Austria</div><div class="hs">Distrik Hallein, Salzburg</div></div>
+<div class="hr"><div class="hb" id="rtg">📋</div></div>
 </header>
-<div id="stats-bar">
-<div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total Fitur</div></div>
-<div class="stat-card"><div class="stat-value" id="stat-cats">—</div><div class="stat-label">Kategori</div></div>
+<div id="lpanel">
+<div class="lph">📋 Legenda</div>
+<div class="lps" id="leg"></div>
+<div class="bms"><div class="bmt">🌍 Peta Dasar</div><div id="bml"></div></div>
 </div>
+<div id="rpanel">
+<div class="rph"><span>📍 Direktori POI</span><span class="rx" id="rcl">✕</span></div>
+<select class="rsel" id="rcat"><option value="all">Semua Kategori</option></select>
+<input class="rsrch" id="rsrch" placeholder="Saring list...">
+<div class="rlist" id="rlist"></div>
+</div>
+<div id="bbar"></div>
+<div id="zoom-custom"><button onclick="map.zoomIn()">+</button><button onclick="map.zoomOut()">−</button></div>
 <div id="map"></div>
-<button class="ctrl-btn" id="sidebar-toggle" title="Legenda">☰</button>
-<div id="sidebar">
-<div class="sidebar-header"><h3>🏷️ Legenda & Layer</h3><p>Klik kategori untuk expand, klik sub untuk toggle</p></div>
-<input type="text" id="search-box" placeholder="🔍 Cari nama lokasi...">
-<div class="legend-list" id="legend-list"></div>
-<div class="basemap-section"><h4>🌍 Basemap</h4><div class="basemap-list" id="basemap-list"></div></div>
-</div>
-<footer id="footer">
-<span>© 2026 WebGIS Hallein — Tugas Kapita Selekta SI</span>
-<span>Data © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | <a href="https://leafletjs.com" target="_blank">Leaflet.js</a></span>
-</footer>
 <script>
 (function(){
-const SUB_CATS = {
-    'Commercial': {
-        color:'#f97316', icon:'🏪',
-        subs: {
-            'Restaurant': {color:'#fb923c',icon:'🍽️',match:f=>['restaurant','cafe','fast_food','food_court'].includes(f.properties.amenity)},
-            'Shop': {color:'#f59e0b',icon:'🛒',match:f=>f.properties.shop&&f.properties.shop!=='supermarket'},
-            'Supermarket': {color:'#ea580c',icon:'🏬',match:f=>f.properties.shop==='supermarket'||f.properties.amenity==='supermarket'}
-        }
-    },
-    'Education': {
-        color:'#3b82f6', icon:'🎓',
-        subs: {
-            'School': {color:'#60a5fa',icon:'🏫',match:f=>f.properties.amenity==='school'},
-            'University': {color:'#2563eb',icon:'🎓',match:f=>f.properties.amenity==='university'},
-            'College': {color:'#818cf8',icon:'📚',match:f=>f.properties.amenity==='college'}
-        }
-    },
-    'Financial': {
-        color:'#10b981', icon:'🏦',
-        subs: {
-            'Bank': {color:'#34d399',icon:'🏦',match:f=>f.properties.amenity==='bank'},
-            'ATM': {color:'#059669',icon:'💳',match:f=>f.properties.amenity==='atm'}
-        }
-    }
-};
-const parentNames = Object.keys(SUB_CATS);
+const C={'Komersial':{color:'#f97316',icon:'🏪',subs:{'Restoran':{c:'#fb923c',i:'🍽️',m:f=>['restaurant','cafe','fast_food','food_court'].includes(f.properties.amenity)},'Toko':{c:'#f59e0b',i:'🛒',m:f=>f.properties.shop&&f.properties.shop!=='supermarket'},'Supermarket':{c:'#ea580c',i:'🏬',m:f=>f.properties.shop==='supermarket'||f.properties.amenity==='supermarket'}}},'Pendidikan':{color:'#3b82f6',icon:'🎓',subs:{'Sekolah':{c:'#60a5fa',i:'🏫',m:f=>f.properties.amenity==='school'},'Universitas':{c:'#2563eb',i:'🎓',m:f=>f.properties.amenity==='university'},'Perguruan Tinggi':{c:'#818cf8',i:'📚',m:f=>f.properties.amenity==='college'}}},'Keuangan':{color:'#10b981',icon:'🏦',subs:{'Bank':{c:'#34d399',i:'🏦',m:f=>f.properties.amenity==='bank'},'ATM':{c:'#059669',i:'💳',m:f=>f.properties.amenity==='atm'}}}};
+const P=Object.keys(C);
+function cat(f){for(const p of P)for(const s of Object.keys(C[p].subs))if(C[p].subs[s].m(f))return{p,s};return null}
 
-function categorize(feature){
-    for(const pn of parentNames){
-        for(const sn of Object.keys(SUB_CATS[pn].subs)){
-            if(SUB_CATS[pn].subs[sn].match(feature)) return {parent:pn,sub:sn};
-        }
-    }
-    return null;
-}
+let dk=true;document.getElementById('thm').onclick=()=>{dk=!dk;document.body.className=dk?'dark':'light';document.getElementById('thm').textContent=dk?'🌙':'☀️';
+if(cB!=='Satelit (Esri)')setB(dk?'CartoDB Dark':'OpenStreetMap')};
 
-// Theme
-let isDark=true;
-document.getElementById('theme-toggle').addEventListener('click',()=>{
-    isDark=!isDark;
-    document.body.className=isDark?'dark':'light';
-    document.getElementById('theme-toggle').textContent=isDark?'🌙':'☀️';
-    setBasemap(currentBasemap);
-});
-
-// Map
-const map=L.map('map',{zoomControl:false,attributionControl:false}).setView([47.68,13.10],12);
-L.control.zoom({position:'topleft'}).addTo(map);
+const map=L.map('map',{zoomControl:false,attributionControl:false}).setView([47.68,13.10],12);window.map=map;
 L.control.scale({position:'bottomleft',imperial:false}).addTo(map);
 
-// Basemaps
-const BASEMAPS={'OpenStreetMap':{url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',opts:{maxZoom:19},icon:'🗺️'},'Satellite (Esri)':{url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',opts:{maxZoom:18},icon:'🛰️'},'Topografi':{url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',opts:{maxZoom:17},icon:'⛰️'},'CartoDB Dark':{url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',opts:{maxZoom:19},icon:'🌑'},'CartoDB Light':{url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',opts:{maxZoom:19},icon:'🌕'}};
-let currentTileLayer=null,currentBasemap='OpenStreetMap';
-function setBasemap(n){if(currentTileLayer)map.removeLayer(currentTileLayer);const b=BASEMAPS[n];currentTileLayer=L.tileLayer(b.url,{...b.opts,attribution:'© OSM'}).addTo(map);currentBasemap=n;document.querySelectorAll('.basemap-opt').forEach(e=>e.classList.toggle('active',e.dataset.name===n))}
-const bmL=document.getElementById('basemap-list');
-Object.keys(BASEMAPS).forEach(n=>{const o=document.createElement('div');o.className='basemap-opt'+(n===currentBasemap?' active':'');o.dataset.name=n;o.innerHTML=`<div class="basemap-radio"></div>${BASEMAPS[n].icon} ${n}`;o.onclick=()=>setBasemap(n);bmL.appendChild(o)});
-setBasemap('OpenStreetMap');
+const BM={'OpenStreetMap':{u:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',o:{maxZoom:19},i:'🗺️'},'Satelit (Esri)':{u:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',o:{maxZoom:18},i:'🛰️'},'Topografi':{u:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',o:{maxZoom:17},i:'⛰️'},'CartoDB Dark':{u:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',o:{maxZoom:19},i:'🌑'}};
+let cTL=null,cB='OpenStreetMap';
+function setB(n){if(cTL)map.removeLayer(cTL);cTL=L.tileLayer(BM[n].u,{...BM[n].o}).addTo(map);cB=n;document.querySelectorAll('.bo').forEach(e=>e.classList.toggle('a',e.dataset.n===n))}
+const bl=document.getElementById('bml');Object.keys(BM).forEach(n=>{const o=document.createElement('div');o.className='bo'+(n===cB?' a':'');o.dataset.n=n;o.innerHTML=`<div class="br"></div>${BM[n].i} ${n}`;o.onclick=()=>setB(n);bl.appendChild(o)});
+setB('CartoDB Dark');
 
-function makeMarker(c){return L.divIcon({className:'',html:`<div style="width:12px;height:12px;background:${c};border:2px solid rgba(255,255,255,.85);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4),0 0 10px ${c}55"></div>`,iconSize:[12,12],iconAnchor:[6,6]})}
+function mk(c){return L.divIcon({className:'',html:`<div style="width:11px;height:11px;background:${c};border:2px solid rgba(255,255,255,.9);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.3),0 0 8px ${c}44"></div>`,iconSize:[11,11],iconAnchor:[5,5]})}
+function pp(pr,pn,sn){const sc=C[pn].subs[sn],nm=pr.name||'Tanpa Nama',tp=pr.amenity||pr.shop||'-';let h=`<div class="pt">${sc.i} ${nm}</div><span class="pb" style="background:${sc.c}22;color:${sc.c};border:1px solid ${sc.c}33">${pn} › ${sn}</span><div style="margin-top:4px">`;[['Tipe',tp],['Operator',pr.operator],['Jam Buka',pr.opening_hours]].forEach(([k,v])=>{if(v)h+=`<div class="pr"><span class="pk">${k}</span><span class="pv">${v}</span></div>`});return h+`<div class="pr"><span class="pk">OSM ID</span><span class="pv">${pr.osm_id||'-'}</span></div></div>`}
 
-function buildPopup(props,pName,sName){
-    const sc=SUB_CATS[pName].subs[sName];
-    const name=props.name||'Tanpa Nama';
-    const type=props.amenity||props.shop||'-';
-    let h=`<div class="popup-title">${sc.icon} ${name}</div>`;
-    h+=`<span class="popup-badge" style="background:${sc.color}22;color:${sc.color};border:1px solid ${sc.color}44">${pName} › ${sName}</span><div style="margin-top:8px">`;
-    [['Tipe',type],['Operator',props.operator],['Jam Buka',props.opening_hours],['Kapasitas',props.capacity],['Jaringan',props.network]].forEach(([k,v])=>{if(v)h+=`<div class="popup-row"><span class="popup-key">${k}</span><span class="popup-val">${v}</span></div>`});
-    h+=`<div class="popup-row"><span class="popup-key">OSM ID</span><span class="popup-val">${props.osm_id||'-'}</span></div></div>`;
-    return h;
-}
+const sL={},cG={};
+P.forEach(p=>{sL[p]={};cG[p]={};Object.keys(C[p].subs).forEach(s=>{cG[p][s]=L.markerClusterGroup({maxClusterRadius:45,showCoverageOnHover:false,iconCreateFunction:cl=>{const n=cl.getChildCount();return L.divIcon({html:`<div><span>${n}</span></div>`,className:`marker-cluster marker-cluster-${n<10?'small':n<30?'medium':'large'}`,iconSize:[38,38]})}});cG[p][s].addTo(map);sL[p][s]=cG[p][s]})});
 
-// Layer groups per sub-category
-const subLayers={};
-parentNames.forEach(pn=>{subLayers[pn]={};Object.keys(SUB_CATS[pn].subs).forEach(sn=>{subLayers[pn][sn]=L.layerGroup().addTo(map)})});
+const bL=L.layerGroup().addTo(map);
+fetch('./clipping_boundary.geojson').then(r=>r.json()).then(b=>{L.geoJSON({type:'Feature',geometry:b,properties:{}},{style:{fillColor:'#a78bfa',fillOpacity:.04,color:'#f59e0b',weight:3,opacity:.8,dashArray:'10,6'}}).addTo(bL)}).catch(()=>{});
 
-// Boundary
-const boundaryLayer=L.layerGroup().addTo(map);
-fetch('./clipping_boundary.geojson').then(r=>r.json()).then(b=>{L.geoJSON({type:'Feature',geometry:b,properties:{}},{style:{fillColor:'#6366f1',fillOpacity:.06,color:'#f59e0b',weight:3,opacity:.85,dashArray:'10,6'}}).addTo(boundaryLayer)}).catch(()=>{});
+// POI data store
+const poiList=[];
 
-// Load data
 fetch('./data/hallein.geojson').then(r=>{if(!r.ok)throw 0;return r.json()}).then(data=>{
-    const counts={};parentNames.forEach(pn=>{counts[pn]={};Object.keys(SUB_CATS[pn].subs).forEach(sn=>counts[pn][sn]=0)});
-    let total=0;
-    (data.features||[]).forEach(f=>{
-        const cat=categorize(f);if(!cat)return;
-        counts[cat.parent][cat.sub]++;total++;
-        const color=SUB_CATS[cat.parent].subs[cat.sub].color;
-        const gt=f.geometry.type;
-        if(gt==='Point'){
-            const c=f.geometry.coordinates;
-            const m=L.marker([c[1],c[0]],{icon:makeMarker(color)});
-            m.bindPopup(buildPopup(f.properties,cat.parent,cat.sub),{maxWidth:280});
-            if(f.properties.name)m.bindTooltip(f.properties.name,{className:'custom-tooltip',direction:'top',offset:[0,-8]});
-            m.feature=f;m.addTo(subLayers[cat.parent][cat.sub]);
-        }else if(gt==='Polygon'||gt==='MultiPolygon'){
-            const ly=L.geoJSON(f,{style:{fillColor:color,fillOpacity:.25,color:color,weight:2,opacity:.7},onEachFeature:(fe,l)=>{l.bindPopup(buildPopup(fe.properties,cat.parent,cat.sub),{maxWidth:280});if(fe.properties.name)l.bindTooltip(fe.properties.name,{className:'custom-tooltip',direction:'top'})}});
-            ly.feature=f;ly.addTo(subLayers[cat.parent][cat.sub]);
-        }
-    });
-    // Fit
-    const all=[];parentNames.forEach(pn=>Object.keys(SUB_CATS[pn].subs).forEach(sn=>all.push(...subLayers[pn][sn].getLayers())));
+    const cn={};P.forEach(p=>{cn[p]={};Object.keys(C[p].subs).forEach(s=>cn[p][s]=0)});let tot=0;
+    (data.features||[]).forEach(f=>{const c=cat(f);if(!c)return;cn[c.p][c.s]++;tot++;const col=C[c.p].subs[c.s].c,gt=f.geometry.type;
+    if(gt==='Point'){const co=f.geometry.coordinates,m=L.marker([co[1],co[0]],{icon:mk(col)});m.bindPopup(pp(f.properties,c.p,c.s),{maxWidth:230});if(f.properties.name)m.bindTooltip(f.properties.name,{className:'custom-tooltip',direction:'top',offset:[0,-8]});m.feature=f;m._cat=c;cG[c.p][c.s].addLayer(m);
+    poiList.push({name:f.properties.name||'Tanpa Nama',p:c.p,s:c.s,lat:co[1],lng:co[0],marker:m,props:f.properties})}
+    else if(gt==='Polygon'||gt==='MultiPolygon'){const ly=L.geoJSON(f,{style:{fillColor:col,fillOpacity:.2,color:col,weight:2,opacity:.7},onEachFeature:(fe,l)=>{l.bindPopup(pp(fe.properties,c.p,c.s),{maxWidth:230});if(fe.properties.name)l.bindTooltip(fe.properties.name,{className:'custom-tooltip',direction:'top'})}});ly.feature=f;cG[c.p][c.s].addLayer(ly);
+    if(f.properties.name){const bounds=ly.getBounds();const center=bounds.getCenter();poiList.push({name:f.properties.name,p:c.p,s:c.s,lat:center.lat,lng:center.lng,layer:ly,props:f.properties})}}});
+    const all=[];P.forEach(p=>Object.keys(C[p].subs).forEach(s=>all.push(...cG[p][s].getLayers())));
     if(all.length)map.fitBounds(L.featureGroup(all).getBounds().pad(0.05));
-    document.getElementById('stat-total').textContent=total;
-    document.getElementById('stat-cats').textContent=parentNames.length;
-    buildLegend(counts);
-    setTimeout(()=>{document.getElementById('loader').classList.add('fade');setTimeout(()=>document.getElementById('loader').style.display='none',500)},400);
-}).catch(()=>{document.getElementById('loader').innerHTML='<div style="color:#f87171;font-size:14px;text-align:center">⚠️ Gagal memuat GeoJSON</div>'});
+    mkLeg(cn);mkStats(cn,tot);buildPOI();
+    setTimeout(()=>{document.getElementById('loader').classList.add('fade');setTimeout(()=>document.getElementById('loader').style.display='none',500)},300);
+}).catch(()=>{document.getElementById('loader').innerHTML='<div style="color:#f87171;font-size:13px">⚠️ Gagal memuat data</div>'});
 
-function buildLegend(counts){
-    const list=document.getElementById('legend-list');list.innerHTML='';
-    // Boundary
-    const bi=document.createElement('div');bi.className='legend-item';bi.innerHTML='<div class="legend-dot" style="background:transparent;border:2px dashed #f59e0b"></div><span class="legend-label">Batas Wilayah</span>';
-    let bv=true;bi.onclick=()=>{bv=!bv;bi.classList.toggle('disabled',!bv);bv?boundaryLayer.addTo(map):map.removeLayer(boundaryLayer)};
-    list.appendChild(bi);
-    list.appendChild(Object.assign(document.createElement('div'),{className:'legend-sep'}));
-
-    parentNames.forEach(pn=>{
-        const pc=SUB_CATS[pn];
-        const subKeys=Object.keys(pc.subs);
-        const parentTotal=subKeys.reduce((s,k)=>s+counts[pn][k],0);
-        if(!parentTotal)return;
-
-        // Parent item
-        const pi=document.createElement('div');pi.className='legend-item legend-parent';
-        pi.innerHTML=`<div class="legend-dot" style="background:${pc.color}"></div><span class="legend-label">${pc.icon} ${pn}</span><span class="legend-count">${parentTotal}</span><span class="legend-arrow">▶</span>`;
-
-        // Sub list container
-        const sl=document.createElement('div');sl.className='sub-list';
-
-        subKeys.forEach(sn=>{
-            if(!counts[pn][sn])return;
-            const sc=pc.subs[sn];
-            const si=document.createElement('div');si.className='sub-item';
-            si.innerHTML=`<div class="sub-dot" style="background:${sc.color}"></div>${sc.icon} ${sn}<span class="sub-count">${counts[pn][sn]}</span>`;
-            let enabled=true;
-            si.onclick=(e)=>{e.stopPropagation();enabled=!enabled;si.classList.toggle('disabled',!enabled);enabled?subLayers[pn][sn].addTo(map):map.removeLayer(subLayers[pn][sn])};
-            sl.appendChild(si);
-        });
-
-        pi.onclick=()=>{const arrow=pi.querySelector('.legend-arrow');sl.classList.toggle('open');arrow.classList.toggle('open')};
-        list.appendChild(pi);list.appendChild(sl);
-    });
+function mkLeg(cn){
+    const a=document.getElementById('leg');a.innerHTML='';
+    let bv=true;const bi=document.createElement('div');bi.className='li';bi.innerHTML='<div class="ld" style="background:transparent;border:2px dashed #f59e0b"></div><span class="lt">Batas Wilayah</span>';
+    bi.onclick=()=>{bv=!bv;bi.classList.toggle('off',!bv);bv?bL.addTo(map):map.removeLayer(bL)};a.appendChild(bi);
+    a.appendChild(Object.assign(document.createElement('div'),{className:'lsep'}));
+    P.forEach(pn=>{const pc=C[pn],sks=Object.keys(pc.subs),pt=sks.reduce((x,k)=>x+cn[pn][k],0);if(!pt)return;
+    const h=document.createElement('div');h.className='sh';h.innerHTML=`<span class="sa">▶</span><span style="color:${pc.color}">●</span> ${pc.icon} ${pn} <span style="margin-left:auto;font-size:8px;opacity:.5">${pt}</span>`;
+    const b=document.createElement('div');b.className='sb';
+    sks.forEach(sn=>{if(!cn[pn][sn])return;const sc=pc.subs[sn],it=document.createElement('div');it.className='li';it.innerHTML=`<div class="ld" style="background:${sc.c}"></div><span class="lt">${sc.i} ${sn}</span><span class="ln">${cn[pn][sn]}</span>`;let on=true;it.onclick=e=>{e.stopPropagation();on=!on;it.classList.toggle('off',!on);on?cG[pn][sn].addTo(map):map.removeLayer(cG[pn][sn])};b.appendChild(it)});
+    h.onclick=()=>{b.classList.toggle('o');h.querySelector('.sa').classList.toggle('o')};a.appendChild(h);a.appendChild(b)});
+}
+function mkStats(cn,tot){
+    const b=document.getElementById('bbar');b.innerHTML=`<div class="bs"><span class="bs-i">📍</span><span class="bs-n">${tot}</span><span class="bs-l">Total</span></div>`;
+    P.forEach(pn=>Object.keys(C[pn].subs).forEach(sn=>{const n=cn[pn][sn];if(n)b.innerHTML+=`<div class="bs"><span class="bs-i">${C[pn].subs[sn].i}</span><span class="bs-n">${n}</span><span class="bs-l">${sn}</span></div>`}));
 }
 
-// Search
-document.getElementById('search-box').addEventListener('input',function(){
-    const q=this.value.toLowerCase().trim();
-    parentNames.forEach(pn=>Object.keys(SUB_CATS[pn].subs).forEach(sn=>{
-        subLayers[pn][sn].eachLayer(l=>{
-            const ft=l.feature||(l.getLayers&&l.getLayers()[0]&&l.getLayers()[0].feature);if(!ft)return;
-            const nm=(ft.properties.name||'').toLowerCase();const ok=!q||nm.includes(q);
-            if(l instanceof L.Marker){const e=l.getElement&&l.getElement();if(e)e.style.display=ok?'':'none'}
-            else if(l.setStyle)l.setStyle({opacity:ok?.7:0,fillOpacity:ok?.25:0});
-            else if(l.eachLayer)l.eachLayer(s=>{if(s.setStyle)s.setStyle({opacity:ok?.7:0,fillOpacity:ok?.25:0})});
-        });
-    }));
-});
+// POI Directory
+function buildPOI(){
+    const sel=document.getElementById('rcat');
+    P.forEach(pn=>{const pc=C[pn];Object.keys(pc.subs).forEach(sn=>{const o=document.createElement('option');o.value=pn+'|'+sn;o.textContent=`${pc.subs[sn].i} ${sn}`;sel.appendChild(o)})});
+    renderPOI();
+    sel.onchange=renderPOI;
+    document.getElementById('rsrch').oninput=renderPOI;
+}
+function renderPOI(){
+    const cv=document.getElementById('rcat').value;
+    const q=document.getElementById('rsrch').value.toLowerCase().trim();
+    const list=document.getElementById('rlist');list.innerHTML='';
+    let filtered=poiList.filter(p=>p.name!=='Tanpa Nama');
+    if(cv!=='all'){const[cp,cs]=cv.split('|');filtered=filtered.filter(p=>p.p===cp&&p.s===cs)}
+    if(q)filtered=filtered.filter(p=>p.name.toLowerCase().includes(q));
+    filtered.sort((a,b)=>a.name.localeCompare(b.name));
+    filtered.slice(0,80).forEach(poi=>{
+        const sc=C[poi.p].subs[poi.s];
+        const d=document.createElement('div');d.className='ri';
+        d.innerHTML=`<div class="ri-icon" style="background:${sc.c}22;color:${sc.c}">${sc.i}</div><div class="ri-info"><div class="ri-name">${poi.name}</div><div class="ri-cat">${poi.p} › ${poi.s}</div></div>`;
+        d.onclick=()=>{map.flyTo([poi.lat,poi.lng],17,{duration:1});
+        if(poi.marker){setTimeout(()=>{cG[poi.p][poi.s].zoomToShowLayer(poi.marker,()=>{poi.marker.openPopup()})},1200)}};
+        list.appendChild(d);
+    });
+    if(!filtered.length)list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:11px">Tidak ada hasil</div>';
+}
 
-// Sidebar toggle
-const sb=document.getElementById('sidebar'),tb=document.getElementById('sidebar-toggle');
-tb.onclick=()=>{sb.classList.toggle('hidden');tb.classList.toggle('show',sb.classList.contains('hidden'))};
-if(innerWidth<768){sb.classList.add('hidden');tb.classList.add('show')}
-onresize=()=>{if(innerWidth<768){sb.classList.add('hidden');tb.classList.add('show')}else{sb.classList.remove('hidden');tb.classList.remove('show')}};
+// Toggles
+const lp=document.getElementById('lpanel'),rp=document.getElementById('rpanel');
+document.getElementById('ltg').onclick=()=>lp.classList.toggle('hid');
+document.getElementById('rtg').onclick=()=>rp.classList.toggle('hid');
+document.getElementById('rcl').onclick=()=>rp.classList.add('hid');
+if(innerWidth<768){lp.classList.add('hid');rp.classList.add('hid')}
+onresize=()=>{if(innerWidth<768){lp.classList.add('hid');rp.classList.add('hid')}};
 })();
 </script>
 </body>
